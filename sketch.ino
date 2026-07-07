@@ -1,86 +1,113 @@
-#include <LiquidCrystal.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
-LiquidCrystal lcd(12,11,5,4,3,2);
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
-const int buttonPin = 7;
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-int dinoRow = 1;
-int obstaclePos = 15;
+// Button Pins
+const int writeBtn = 2;
+const int readBtn  = 3;
+const int sleepBtn = 4;
+const int wakeBtn  = 5;
 
-bool jumping = false;
-unsigned long jumpTime = 0;
+// LED Pin
+const int led = 8;
 
-int score = 0;
+// Simulated SRAM Data
+String memoryData = "10101010";
 
 void setup() {
-  pinMode(buttonPin, INPUT);
+  pinMode(writeBtn, INPUT_PULLUP);
+  pinMode(readBtn, INPUT_PULLUP);
+  pinMode(sleepBtn, INPUT_PULLUP);
+  pinMode(wakeBtn, INPUT_PULLUP);
+  pinMode(led, OUTPUT);
 
-  lcd.begin(16,2);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
 
-  // Custom dino character
-  byte dino[8] = {
-    B00100,
-    B01110,
-    B10101,
-    B00100,
-    B01110,
-    B10101,
-    B00100,
-    B00000
-  };
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
 
-  lcd.createChar(0,dino);
+  display.setCursor(10, 10);
+  display.println("Ultra Low Power");
+  display.setCursor(25, 25);
+  display.println("SRAM");
+  display.setCursor(15, 40);
+  display.println("Simulator");
+  display.display();
 
-  lcd.clear();
+  delay(2000);
 }
 
 void loop() {
 
-  // Button pressed → jump
-  if(digitalRead(buttonPin)==HIGH && !jumping){
-      jumping=true;
-      dinoRow=0;
-      jumpTime=millis();
+  // WRITE
+  if (digitalRead(writeBtn) == LOW) {
+
+    digitalWrite(led, HIGH);
+
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.println("WRITE SUCCESS");
+    display.println();
+    display.print("Stored Data:");
+    display.println(memoryData);
+    display.display();
+
+    delay(1000);
+    digitalWrite(led, LOW);
   }
 
-  // Jump duration
-  if(jumping && millis()-jumpTime>500){
-      jumping=false;
-      dinoRow=1;
+  // READ
+  if (digitalRead(readBtn) == LOW) {
+
+    digitalWrite(led, HIGH);
+
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.println("READ SUCCESS");
+    display.println();
+    display.print("Data:");
+    display.println(memoryData);
+    display.display();
+
+    delay(1000);
+    digitalWrite(led, LOW);
   }
 
-  lcd.clear();
+  // SLEEP
+  if (digitalRead(sleepBtn) == LOW) {
 
-  // Display Dino
-  lcd.setCursor(1,dinoRow);
-  lcd.write(byte(0));
+    digitalWrite(led, LOW);
 
-  // Display obstacle
-  lcd.setCursor(obstaclePos,1);
-  lcd.print("|");
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.println("LOW POWER MODE");
+    display.println();
+    display.println("Sleeping...");
+    display.display();
 
-  // Collision check
-  if(obstaclePos==1 && dinoRow==1){
-      lcd.clear();
-      lcd.setCursor(3,0);
-      lcd.print("GAME OVER");
-
-      lcd.setCursor(4,1);
-      lcd.print("Score:");
-      lcd.print(score);
-
-      while(true);
+    delay(2000);
   }
 
-  obstaclePos--;
+  // WAKE
+  if (digitalRead(wakeBtn) == LOW) {
 
-  if(obstaclePos<0){
-      obstaclePos=15;
-      score++;
+    digitalWrite(led, HIGH);
+
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.println("SYSTEM AWAKE");
+    display.println();
+    display.print("Stored Data:");
+    display.println(memoryData);
+    display.display();
+
+    delay(1000);
+    digitalWrite(led, LOW);
   }
-
-  lcd.setCursor(10,0);
-  lcd.print(score);
-
-  delay(150);
 }
